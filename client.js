@@ -10,6 +10,7 @@ const rl = readline.createInterface({
   prompt: "> ",
 });
 
+let registeredUsername = "";
 let targetUsername = "";
 let username = "";
 const users = new Map();
@@ -54,6 +55,7 @@ socket.on("connect", () => {
 
   rl.question("Enter your username: ", (input) => {
     username = input;
+    registeredUsername = input;
     console.log(`Welcome, ${username} to the chat`);
 
     socket.emit("registerPublicKey", {
@@ -65,7 +67,10 @@ socket.on("connect", () => {
     rl.on("line", (message) => {
       if (message.trim()) {
         let match;
-        if ((match = message.match(/^!secret (\w+)$/))) {
+        if ((match = message.match(/^!impersonate (\w+)$/))) {
+          username = match[1];
+          console.log(`Now impersonating as ${username}`);
+        } else if ((match = message.match(/^!secret (\w+)$/))) {
           const requestedTarget = match[1];
           if (!users.has(requestedTarget)) {
             console.log(`User ${requestedTarget} not found`);
@@ -74,8 +79,14 @@ socket.on("connect", () => {
             console.log(`Now secretly chatting with ${targetUsername}`);
           }
         } else if (message.match(/^!exit$/)) {
-          console.log(`No more secretly chatting with ${targetUsername}`);
-          targetUsername = "";
+          if (targetUsername) {
+            console.log(`No more secretly chatting with ${targetUsername}`);
+            targetUsername = "";
+          }
+          if (username !== registeredUsername) {
+            username = registeredUsername;
+            console.log(`Now you are ${username}`);
+          }
         } else {
           let messageBody = message;
           let mode = "PLAIN";
